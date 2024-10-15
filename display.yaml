@@ -1,0 +1,14 @@
+# This config supports hot-reloading for ical feeds that can be configured below `calendars`
+# It is possible to add multiple iCal calendar feeds
+calendars:
+  calendar1:
+    from: file
+    ical: ./path/to/calender1.ics
+  calendar2:
+    from: url
+    ical: www.example.com/calendar/calendar.ics
+
+# The server configuration does not support hot-reloading and requires to restart the server
+server:
+  port: 8080
+  debug: true
