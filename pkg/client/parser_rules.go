@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -34,44 +35,39 @@ func (r *Rule) Evaluate(e *pb.CalendarEntry, zapLog *otelzap.Logger) (bool, bool
 	match := false
 
 	switch r.Key {
-	case "*":
-		fallthrough
 	case "title":
 		matchFieldValue = e.Title
-		for _, contains := range r.Contains {
-			if contains == "*" {
-				match = true
-			}
-
-			if strings.Contains(e.Title, contains) {
-				match = true
-			}
-
-			if match {
-				matchFieldContains = contains
-				break
-			}
-		}
 
 	case "all_day":
-		for _, contains := range r.Contains {
-			matchFieldValue = strconv.FormatBool(e.AllDay)
-			if contains == "*" {
-				match = true
-			}
+		matchFieldValue = strconv.FormatBool(e.AllDay)
 
-			if strings.Contains(strconv.FormatBool(e.AllDay), contains) {
-				match = true
-			}
+	case "busy":
+		matchFieldValue = e.Busy.String()
 
-			if match {
-				matchFieldContains = contains
-				break
-			}
+		// if the user wants to match on all possible locations,
+		// let's just concatenate them all in one big string, shall we?
+		// This way we search all fields :D
+	case "*":
+		matchFieldValue = fmt.Sprintf("%s%s%s", e.Title, strconv.FormatBool(e.AllDay), e.Busy.String())
+	}
+
+	for _, contains := range r.Contains {
+		if contains == "*" {
+			match = true
+		}
+
+		// compare but ignore case...
+		if strings.Contains(strings.ToLower(matchFieldValue), strings.ToLower(contains)) {
+			match = true
+		}
+
+		if match {
+			matchFieldContains = contains
+			break
 		}
 	}
 
-	// The rule doesn't match
+	// The rule doesn't match, so we also don't skip
 	if !match {
 		return false, false
 	}
@@ -80,7 +76,7 @@ func (r *Rule) Evaluate(e *pb.CalendarEntry, zapLog *otelzap.Logger) (bool, bool
 	e.Message = r.Relabel.Message
 	e.Important = r.Relabel.Important
 
-	zapLog.Sugar().Debugw("Rule Evaluated", "rule_name", r.Name, "title", e.Title, "Field", matchFieldValue, "contains", matchFieldContains, "skip", r.Skip, "relabel_important", e.Important, "relabel_message", e.Message)
+	zapLog.Sugar().Debugw("Rule Evaluated", "rule_name", r.Name, "title", e.Title, "key", r.Key, "Field", matchFieldValue, "contains", matchFieldContains, "skip", r.Skip, "relabel_important", e.Important, "relabel_message", e.Message)
 
 	return true, r.Skip
 }

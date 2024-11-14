@@ -18,13 +18,19 @@ import (
 	"github.com/cedi/icaltest/pkg/client"
 )
 
+var (
+	savedHostname string
+	savedGrpcPort int
+	savedRestPort int
+)
+
 func main() {
 	viper.SetDefault("server.httpPort", 8080)
 	viper.SetDefault("server.grpcPort", 50051)
 	viper.SetDefault("server.host", "")
 	viper.SetDefault("server.debug", false)
 	viper.SetDefault("server.refresh", "5m")
-	viper.SetDefault("rules.excludeNonImportant", false)
+	viper.SetDefault("rules", []client.Rule{client.Rule{Name: "Catch All", Key: "*", Contains: []string{"*"}, Skip: false}})
 
 	viper.SetConfigName("display")                          // name of config file (without extension)
 	viper.SetConfigType("yaml")                             // REQUIRED if the config file does not have the extension in the name
@@ -35,10 +41,13 @@ func main() {
 	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig() // Find and read the config file
-
-	if err != nil { // Handle errors reading the config file
+	if err != nil {             // Handle errors reading the config file
 		panic(fmt.Errorf("fatal error config file: %w", err))
 	}
+
+	savedHostname = viper.GetString("server.host")
+	savedGrpcPort = viper.GetInt("server.grpcPort")
+	savedRestPort = viper.GetInt("server.httpPort")
 
 	// Initialize Logging
 	var zapLog *zap.Logger
@@ -103,11 +112,17 @@ func main() {
 			gin.SetMode(gin.ReleaseMode)
 		}
 
-		grpcAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.grpcPort"))
-		restAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.httpPort"))
-
-		if grpcAddr != gRpcApiServer.Addr() || restAddr != restApiServer.Addr() {
-			zapLog.Sugar().Errorw("Unable to change host or port at runtime!", "host", viper.GetInt("server.host"), "httpPort", viper.GetInt("server.httpPort"), "grpcPort", viper.GetInt("server.grpcPort"))
+		if savedHostname != viper.GetString("server.host") ||
+			savedGrpcPort != viper.GetInt("server.grpcPort") ||
+			savedRestPort != viper.GetInt("server.httpPort") {
+			zapLog.Sugar().Errorw("Unable to change host or port at runtime!",
+				"new_host", viper.GetString("server.host"),
+				"old_host", savedHostname,
+				"new_grpcPort", viper.GetInt("server.grpcPort"),
+				"old_grpcPort", savedGrpcPort,
+				"new_restPort", viper.GetInt("server.httpPort"),
+				"old_grpcPort", savedRestPort,
+			)
 		}
 	})
 

@@ -106,6 +106,7 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 
 func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
 	if e.cache == nil {
+		e.zapLog.Ctx(ctx).Sugar().Infow("Experiencing cold. Fetching events now!")
 		e.FetchEvents(ctx)
 	}
 
