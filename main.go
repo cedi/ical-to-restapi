@@ -1,23 +1,29 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/cedi/icaltest/pkg/calendar"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
-	ginprometheus "github.com/mcuadros/go-gin-prometheus"
 	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.uber.org/zap"
+
+	"github.com/cedi/icaltest/pkg/api"
+	"github.com/cedi/icaltest/pkg/client"
 )
 
 func main() {
-	viper.SetDefault("server.port", 8080)
+	viper.SetDefault("server.httpPort", 8080)
+	viper.SetDefault("server.grpcPort", 50051)
 	viper.SetDefault("server.host", "")
 	viper.SetDefault("server.debug", false)
+	viper.SetDefault("server.refresh", "5m")
 
 	viper.SetConfigName("display")                          // name of config file (without extension)
 	viper.SetConfigType("yaml")                             // REQUIRED if the config file does not have the extension in the name
@@ -57,35 +63,59 @@ func main() {
 	defer zapLog.Sync()
 	defer undo()
 
-	// Setup Gin router
-	router := gin.New()
-	router.Use(
-		otelgin.Middleware("conf_room_display"),
-	)
+	iCalClient := client.NewICalClient(otelZap)
 
-	// Set-up Prometheus
-	p := ginprometheus.NewPrometheus("conf_room_display")
-	p.Use(router)
-
-	// Set up the HTTP Server
-	srv := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port")),
-		Handler: router,
+	refresh, err := time.ParseDuration(viper.GetString("server.refresh"))
+	if err != nil {
+		refresh = 5 * time.Minute
 	}
 
-	var eventList calendar.EventList
+	refreshTicker := time.NewTicker(refresh)
+	quitRefreshTicker := make(chan struct{})
+	go func() {
+		// initial load
+		iCalClient.FetchEvents(context.Background())
 
-	// Register the routes
-	router.GET("/events", eventList.GetEvents)
+		for {
+			select {
+			case <-refreshTicker.C:
+				iCalClient.FetchEvents(context.Background())
+				iCalClient.InvalidateCache()
+			case <-quitRefreshTicker:
+				refreshTicker.Stop()
+				return
+			}
+		}
+	}()
+
+	restApiServer := api.NewRestApiServer(otelZap, iCalClient)
+	gRpcApiServer := api.NewGrpcApiServer(otelZap, iCalClient)
 
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		otelzap.L().Sugar().Infow("config file change detected. Reloading.", "filename", e.Name)
-		eventList.CacheInvalidate()
+		iCalClient.FetchEvents(context.Background())
 	})
+
 	viper.WatchConfig()
 
-	// Serve
-	if err := srv.ListenAndServe(); err != nil {
-		panic(err.Error())
-	}
+	// Serve Rest-API
+	go func() {
+		if err := restApiServer.ListenAndServe(); err != nil {
+			panic(err.Error())
+		}
+	}()
+
+	// Serve gRPC-API
+	go func() {
+		if err := gRpcApiServer.Serve(); err != nil {
+			panic(err.Error())
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
+
+	// close timer
+	close(quitRefreshTicker)
 }

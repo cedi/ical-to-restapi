@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "pbkit.vscode-pbkit",
+        "bufbuild.vscode-buf",
+        "golang.go"
+    ]
+}

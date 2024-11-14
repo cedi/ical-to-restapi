@@ -1,6 +1,8 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type ResolvingError struct {
 	Err          error
@@ -23,4 +25,11 @@ func Wrap(parent *ResolvingError, err error, howToResolve string) *ResolvingErro
 
 func (e *ResolvingError) Error() string {
 	return fmt.Sprintf("%s. To resolve: %s", e.Err.Error(), e.HowToResolve)
+}
+
+func (e *ResolvingError) AsZapLogKV() []string {
+	return []string{
+		"error", e.Err.Error(),
+		"how_to_fix", e.HowToResolve,
+	}
 }
