@@ -10,5 +10,35 @@ calendars:
 
 # The server configuration does not support hot-reloading and requires to restart the server
 server:
-  port: 8080
-  debug: true
+  httpPort: 8080
+  grpcPort: 50051
+  server: ""
+  debug: false
+  refresh: 5m
+
+rules:
+  - name: "1:1s"
+    key: "title"
+    contains:
+      - "1:1"
+    relabelConfig:
+      message: "1:1"
+      important: true
+
+  - name: "Skip all day events"
+    key: "all_day"
+    contains:
+      - "true"
+    skip: true
+
+  - name: "Skip non-blocking events"
+    key: "busy"
+    contains:
+      - "Free"
+    skip: true
+
+  - name: "Allow everything else"
+    key: "*"
+    important: false
+    contains:
+      - "*"
