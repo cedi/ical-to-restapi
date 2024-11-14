@@ -19,6 +19,7 @@ message CalendarEntry {
     bool all_day = 4;
     BusyState busy = 5;
     bool important = 6;
+    string message = 7;
 }
 
 message CalendarResponse {

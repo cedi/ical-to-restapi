@@ -55,3 +55,7 @@ func (e *RestApi) ListenAndServe() error {
 func (e *RestApi) GetCalendar(ct *gin.Context) {
 	ct.JSON(http.StatusOK, e.client.GetEvents(ct.Request.Context()))
 }
+
+func (e *RestApi) Addr() string {
+	return e.srv.Addr
+}

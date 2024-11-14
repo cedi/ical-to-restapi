@@ -24,6 +24,7 @@ func main() {
 	viper.SetDefault("server.host", "")
 	viper.SetDefault("server.debug", false)
 	viper.SetDefault("server.refresh", "5m")
+	viper.SetDefault("rules.excludeNonImportant", false)
 
 	viper.SetConfigName("display")                          // name of config file (without extension)
 	viper.SetConfigType("yaml")                             // REQUIRED if the config file does not have the extension in the name
@@ -80,7 +81,6 @@ func main() {
 			select {
 			case <-refreshTicker.C:
 				iCalClient.FetchEvents(context.Background())
-				iCalClient.InvalidateCache()
 			case <-quitRefreshTicker:
 				refreshTicker.Stop()
 				return
@@ -92,8 +92,23 @@ func main() {
 	gRpcApiServer := api.NewGrpcApiServer(otelZap, iCalClient)
 
 	viper.OnConfigChange(func(e fsnotify.Event) {
-		otelzap.L().Sugar().Infow("config file change detected. Reloading.", "filename", e.Name)
+		otelzap.L().Sugar().Infow("Config file change detected. Reloading.", "filename", e.Name)
 		iCalClient.FetchEvents(context.Background())
+
+		if viper.GetBool("server.debug") {
+			zapLog, err = zap.NewDevelopment()
+			gin.SetMode(gin.DebugMode)
+		} else {
+			zapLog, err = zap.NewProduction()
+			gin.SetMode(gin.ReleaseMode)
+		}
+
+		grpcAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.grpcPort"))
+		restAddr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.httpPort"))
+
+		if grpcAddr != gRpcApiServer.Addr() || restAddr != restApiServer.Addr() {
+			zapLog.Sugar().Errorw("Unable to change host or port at runtime!", "host", viper.GetInt("server.host"), "httpPort", viper.GetInt("server.httpPort"), "grpcPort", viper.GetInt("server.grpcPort"))
+		}
 	})
 
 	viper.WatchConfig()

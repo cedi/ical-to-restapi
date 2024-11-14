@@ -51,3 +51,7 @@ func (e *GrpcApi) Serve() error {
 	otelzap.L().Sugar().Infof("gRPC Server listening at %s", e.lis.Addr())
 	return e.srv.Serve(e.lis)
 }
+
+func (e *GrpcApi) Addr() string {
+	return e.lis.Addr().String()
+}

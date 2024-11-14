@@ -58,21 +58,20 @@ func NewICalClient(zapLog *otelzap.Logger) *ICalClient {
 	return &ICalClient{
 		zapLog:          zapLog,
 		cacheExpiration: time.Now(),
+		cache: &pb.CalendarResponse{
+			LastUpdated: timestamppb.Now(),
+		},
 	}
-}
-
-func (e *ICalClient) InvalidateCache() {
-	e.cacheExpiration = time.Now().Add(-1 * time.Hour)
 }
 
 func (e *ICalClient) FetchEvents(ctx context.Context) {
-	if e.cache == nil {
-		e.cache = &pb.CalendarResponse{
-			LastUpdated: timestamppb.Now(),
-		}
+	response := &pb.CalendarResponse{
+		LastUpdated: timestamppb.Now(),
+		Entries:     make([]*pb.CalendarEntry, 0),
 	}
 
 	calendars := viper.GetStringMap("calendars")
+	rules := parseRules()
 
 	var wg sync.WaitGroup
 	var eventsMux sync.Mutex
@@ -84,15 +83,15 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 
 		go func() {
 			start := time.Now()
-			events, err := e.loadEvents(ctx, from, url)
+			events, err := e.loadEvents(ctx, from, url, rules)
 			stop := time.Now()
 			if err != nil {
 				e.zapLog.Ctx(ctx).Sugar().Errorw("Unable to load events", err.AsZapLogKV())
 			}
 
 			eventsMux.Lock()
-			e.cache.LastUpdated = timestamppb.Now()
-			e.cache.Entries = append(e.cache.Entries, events...)
+			response.LastUpdated = timestamppb.Now()
+			response.Entries = append(response.Entries, events...)
 			eventsMux.Unlock()
 
 			e.zapLog.Ctx(ctx).Sugar().Infof("Refreshed calendar %s in %dms", key, stop.Sub(start).Milliseconds())
@@ -100,7 +99,9 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 			wg.Done()
 		}()
 	}
+
 	wg.Wait()
+	e.cache = response
 }
 
 func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
@@ -111,7 +112,7 @@ func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
 	return e.cache
 }
 
-func (e *ICalClient) loadEvents(ctx context.Context, from string, url string) ([]*pb.CalendarEntry, *errors.ResolvingError) {
+func (e *ICalClient) loadEvents(ctx context.Context, from string, url string, rules []Rule) ([]*pb.CalendarEntry, *errors.ResolvingError) {
 	ical, err := e.getIcal(ctx, from, url)
 	if ical == nil || err != nil {
 		return nil, errors.Wrap(err, fmt.Errorf("failed to load iCal calendar file"), "")
@@ -139,12 +140,29 @@ func (e *ICalClient) loadEvents(ctx context.Context, from string, url string) ([
 	})
 
 	events := make([]*pb.CalendarEntry, 0)
-	for _, e := range cal.Events {
-		event := NewCalendarEntryFromGocalEvent(e)
+	for _, evnt := range cal.Events {
+		event := NewCalendarEntryFromGocalEvent(evnt)
 		if event == nil {
 			continue
 		}
-		events = append(events, event)
+
+		// let's evaluate our rules
+		for _, rule := range rules {
+			// if a rule is sucessfully evaluated
+			if ok, skip := rule.Evaluate(event, e.zapLog); ok {
+				// if this is a skip rule, don't process any other rules for this
+				// event and don't add it
+				if skip {
+					break
+				}
+
+				events = append(events, event)
+
+				// since we found the first rule that matches, no need to
+				// process any more rules
+				break
+			}
+		}
 	}
 
 	return events, nil
