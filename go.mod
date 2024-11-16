@@ -5,7 +5,7 @@ go 1.22.7
 toolchain go1.23.3
 
 require (
-	github.com/apognu/gocal v0.9.1-0.20230530111647-31d5c7a8c5ba
+	github.com/apognu/gocal v0.9.1
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gin-contrib/zap v1.1.4
 	github.com/gin-gonic/gin v1.10.0
