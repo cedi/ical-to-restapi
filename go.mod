@@ -1,4 +1,4 @@
-module github.com/cedi/icaltest
+module github.com/cedi/meeting_epd
 
 go 1.22.7
 

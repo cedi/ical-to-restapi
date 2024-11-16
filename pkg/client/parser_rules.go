@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 
-	pb "github.com/cedi/icaltest/pkg/protos"
+	pb "github.com/cedi/meeting_epd/pkg/protos"
 )
 
 type RelabelConfig struct {

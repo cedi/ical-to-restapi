@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/cedi/icaltest/pkg/client"
+	"github.com/cedi/meeting_epd/pkg/client"
 )
 
 type RestApi struct {
@@ -76,7 +76,12 @@ func (e *RestApi) ListenAndServe() error {
 }
 
 func (e *RestApi) GetCalendar(ct *gin.Context) {
-	ct.JSON(http.StatusOK, e.client.GetEvents(ct.Request.Context()))
+	switch ct.ContentType() {
+	case "application/protobuf":
+		ct.ProtoBuf(http.StatusOK, e.client.GetEvents(ct.Request.Context()))
+	default:
+		ct.JSON(http.StatusOK, e.client.GetEvents(ct.Request.Context()))
+	}
 }
 
 func (e *RestApi) Addr() string {

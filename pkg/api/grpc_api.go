@@ -10,8 +10,8 @@ import (
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"google.golang.org/grpc"
 
-	"github.com/cedi/icaltest/pkg/client"
-	pb "github.com/cedi/icaltest/pkg/protos"
+	"github.com/cedi/meeting_epd/pkg/client"
+	pb "github.com/cedi/meeting_epd/pkg/protos"
 )
 
 type GrpcApi struct {

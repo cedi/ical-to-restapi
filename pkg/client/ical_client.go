@@ -12,12 +12,11 @@ import (
 	"time"
 
 	"github.com/apognu/gocal"
-	"github.com/cedi/icaltest/pkg/errors"
+	"github.com/cedi/meeting_epd/pkg/errors"
 	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "github.com/cedi/icaltest/pkg/protos"
+	pb "github.com/cedi/meeting_epd/pkg/protos"
 )
 
 type ICalClient struct {
@@ -59,14 +58,14 @@ func NewICalClient(zapLog *otelzap.Logger) *ICalClient {
 		zapLog:          zapLog,
 		cacheExpiration: time.Now(),
 		cache: &pb.CalendarResponse{
-			LastUpdated: timestamppb.Now(),
+			LastUpdated: time.Now().Unix(),
 		},
 	}
 }
 
 func (e *ICalClient) FetchEvents(ctx context.Context) {
 	response := &pb.CalendarResponse{
-		LastUpdated: timestamppb.Now(),
+		LastUpdated: time.Now().Unix(),
 		Entries:     make([]*pb.CalendarEntry, 0),
 	}
 
@@ -90,7 +89,7 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 			}
 
 			eventsMux.Lock()
-			response.LastUpdated = timestamppb.Now()
+			response.LastUpdated = time.Now().Unix()
 			response.Entries = append(response.Entries, events...)
 			eventsMux.Unlock()
 
@@ -99,6 +98,10 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 			wg.Done()
 		}()
 	}
+
+	eventsMux.Lock()
+	response.CalendarEntries = int32(len(response.Entries))
+	eventsMux.Unlock()
 
 	wg.Wait()
 	e.cache = response
@@ -198,8 +201,8 @@ func NewCalendarEntryFromGocalEvent(e gocal.Event) *pb.CalendarEntry {
 
 	return &pb.CalendarEntry{
 		Title:  e.Summary,
-		Start:  timestamppb.New(start),
-		End:    timestamppb.New(end),
+		Start:  start.Unix(),
+		End:    end.Unix(),
 		AllDay: allDay,
 		Busy:   busy,
 	}

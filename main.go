@@ -14,8 +14,8 @@ import (
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"go.uber.org/zap"
 
-	"github.com/cedi/icaltest/pkg/api"
-	"github.com/cedi/icaltest/pkg/client"
+	"github.com/cedi/meeting_epd/pkg/api"
+	"github.com/cedi/meeting_epd/pkg/client"
 )
 
 var (
