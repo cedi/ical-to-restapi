@@ -20,6 +20,7 @@ import (
 )
 
 type ICalClient struct {
+	cacheMux        sync.RWMutex
 	cache           *pb.CalendarResponse
 	cacheExpiration time.Time
 	zapLog          *otelzap.Logger
@@ -99,12 +100,10 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 		}()
 	}
 
-	eventsMux.Lock()
-	response.CalendarEntries = int32(len(response.Entries))
-	eventsMux.Unlock()
-
 	wg.Wait()
+	e.cacheMux.Lock()
 	e.cache = response
+	e.cacheMux.Unlock()
 }
 
 func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
@@ -112,6 +111,9 @@ func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
 		e.zapLog.Ctx(ctx).Sugar().Infow("Experiencing cold. Fetching events now!")
 		e.FetchEvents(ctx)
 	}
+
+	e.cacheMux.RLock()
+	defer e.cacheMux.Unlock()
 
 	return e.cache
 }
