@@ -4,18 +4,16 @@ option go_package = "github.com/cedi/icaltest/protos";
 
 package meetingroom_display_epd;
 
-import "google/protobuf/timestamp.proto";
-
 enum BusyState {
-    Busy = 0;
+    Free = 0;
     Tentative = 1;
-    Free = 2;
+    Busy = 2;
 }
 
 message CalendarEntry {
     string title = 1;
-    google.protobuf.Timestamp start = 2;
-    google.protobuf.Timestamp end = 3;
+    int64 start = 2;
+    int64 end = 3;
     bool all_day = 4;
     BusyState busy = 5;
     bool important = 6;
@@ -23,12 +21,12 @@ message CalendarEntry {
 }
 
 message CalendarResponse {
-    google.protobuf.Timestamp last_updated = 1;
+    int64 last_updated = 1;
     repeated CalendarEntry entries = 2;
 }
 
 message CalendarRequest {
-    google.protobuf.Timestamp timestamp = 1;
+    int64 timestamp = 1;
 }
 
 

@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CalenderService_GetCalendar_FullMethodName = "/com.cedi.meetingroom_display_epd.CalenderService/GetCalendar"
+	CalenderService_GetCalendar_FullMethodName = "/meetingroom_display_epd.CalenderService/GetCalendar"
 )
 
 // CalenderServiceClient is the client API for CalenderService service.
@@ -108,7 +108,7 @@ func _CalenderService_GetCalendar_Handler(srv interface{}, ctx context.Context, 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var CalenderService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "com.cedi.meetingroom_display_epd.CalenderService",
+	ServiceName: "meetingroom_display_epd.CalenderService",
 	HandlerType: (*CalenderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

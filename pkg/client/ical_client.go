@@ -113,8 +113,7 @@ func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
 	}
 
 	e.cacheMux.RLock()
-	defer e.cacheMux.Unlock()
-
+	defer e.cacheMux.RUnlock()
 	return e.cache
 }
 
