@@ -24,6 +24,9 @@ type ICalClient struct {
 	cache           *pb.CalendarResponse
 	cacheExpiration time.Time
 	zapLog          *otelzap.Logger
+
+	statusMux    sync.RWMutex
+	CustomStatus pb.CustomStatus
 }
 
 var tzMapping = map[string]string{
@@ -115,6 +118,28 @@ func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
 	e.cacheMux.RLock()
 	defer e.cacheMux.RUnlock()
 	return e.cache
+}
+
+func (e *ICalClient) GetCustomStatus(ctx context.Context) *pb.CustomStatus {
+	e.statusMux.RLock()
+	defer e.statusMux.RUnlock()
+
+	return &pb.CustomStatus{
+		Icon:        e.CustomStatus.Icon,
+		IconSize:    e.CustomStatus.IconSize,
+		Title:       e.CustomStatus.Title,
+		Description: e.CustomStatus.Description,
+	}
+}
+
+func (e *ICalClient) SetCustomStatus(ctx context.Context, status *pb.CustomStatus) {
+	e.statusMux.Lock()
+	defer e.statusMux.Unlock()
+
+	e.CustomStatus.Icon = status.Icon
+	e.CustomStatus.IconSize = status.IconSize
+	e.CustomStatus.Title = status.Title
+	e.CustomStatus.Description = status.Description
 }
 
 func (e *ICalClient) loadEvents(ctx context.Context, from string, url string, rules []Rule) ([]*pb.CalendarEntry, *errors.ResolvingError) {

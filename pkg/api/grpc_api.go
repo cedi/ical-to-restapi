@@ -47,6 +47,20 @@ func (e *GrpcApi) GetCalendar(ctx context.Context, _ *pb.CalendarRequest) (*pb.C
 	return e.client.GetEvents(ctx), nil
 }
 
+func (e *GrpcApi) RefreshCalendar(ctx context.Context, _ *pb.CalendarRequest) (*pb.RefreshCalendarResponse, error) {
+	e.client.FetchEvents(ctx)
+	return nil, nil
+}
+
+func (e *GrpcApi) GetCustomStatus(ctx context.Context, _ *pb.CustomStatusRequest) (*pb.CustomStatus, error) {
+	return e.client.GetCustomStatus(ctx), nil
+}
+
+func (e *GrpcApi) SetCustomStatus(ctx context.Context, status *pb.CustomStatus) (*pb.CustomStatus, error) {
+	e.client.SetCustomStatus(ctx, status)
+	return e.client.GetCustomStatus(ctx), nil
+}
+
 func (e *GrpcApi) Serve() error {
 	otelzap.L().Sugar().Infof("gRPC Server listening at %s", e.lis.Addr())
 	return e.srv.Serve(e.lis)

@@ -1,7 +1,9 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -14,8 +16,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/cedi/meeting_epd/pkg/client"
+	pb "github.com/cedi/meeting_epd/pkg/protos"
 )
 
 type RestApi struct {
@@ -61,6 +65,10 @@ func NewRestApiServer(zapLog *otelzap.Logger, client *client.ICalClient) *RestAp
 	p.Use(router)
 
 	router.GET("/calendar", e.GetCalendar)
+	router.PUT("/calendar", e.RefreshCalendar)
+	router.GET("/status", e.GetCustomStatus)
+	router.POST("/status", e.SetCustomStatus)
+	router.DELETE("/status", e.UnsetCustomStatus)
 
 	// configure the HTTP Server
 	e.srv = &http.Server{
@@ -75,6 +83,10 @@ func (e *RestApi) ListenAndServe() error {
 	return e.srv.ListenAndServe()
 }
 
+func (e *RestApi) RefreshCalendar(ct *gin.Context) {
+	e.client.FetchEvents(ct.Request.Context())
+}
+
 func (e *RestApi) GetCalendar(ct *gin.Context) {
 	switch ct.ContentType() {
 	case "application/protobuf":
@@ -82,6 +94,54 @@ func (e *RestApi) GetCalendar(ct *gin.Context) {
 	default:
 		ct.JSON(http.StatusOK, e.client.GetEvents(ct.Request.Context()))
 	}
+}
+
+func (e *RestApi) GetCustomStatus(ct *gin.Context) {
+	switch ct.ContentType() {
+	case "application/protobuf":
+		ct.ProtoBuf(http.StatusOK, e.client.GetCustomStatus(ct.Request.Context()))
+	default:
+		ct.JSON(http.StatusOK, e.client.GetCustomStatus(ct.Request.Context()))
+	}
+}
+
+func (e *RestApi) SetCustomStatus(ct *gin.Context) {
+
+	var err error
+	var body []byte
+	var customStatus pb.CustomStatus
+
+	switch ct.ContentType() {
+	case "application/protobuf":
+		body, err = io.ReadAll(ct.Request.Body)
+		if err != nil {
+			ct.ProtoBuf(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+			return
+		}
+
+		if err = proto.Unmarshal(body, &customStatus); err != nil {
+			ct.ProtoBuf(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
+			return
+		}
+
+	default:
+		body, err = io.ReadAll(ct.Request.Body)
+		if err != nil {
+			ct.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+			return
+		}
+
+		if err = json.Unmarshal(body, &customStatus); err != nil {
+			ct.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
+			return
+		}
+	}
+
+	e.client.SetCustomStatus(ct.Request.Context(), &customStatus)
+}
+
+func (e *RestApi) UnsetCustomStatus(ct *gin.Context) {
+	e.client.SetCustomStatus(ct.Request.Context(), &pb.CustomStatus{})
 }
 
 func (e *RestApi) Addr() string {

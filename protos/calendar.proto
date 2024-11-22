@@ -29,7 +29,24 @@ message CalendarRequest {
     int64 timestamp = 1;
 }
 
+message CustomStatusRequest {
+    int64 timestamp = 1;
+}
+
+message RefreshCalendarResponse {
+    int64 timestamp = 1;
+}
+
+message CustomStatus {
+    string icon = 1;
+    int32 icon_size = 2;
+    string title = 3;
+    string description = 4;
+}
 
 service CalenderService {
     rpc GetCalendar(CalendarRequest) returns (CalendarResponse) {}
+    rpc RefreshCalendar(CalendarRequest) returns (RefreshCalendarResponse) {}
+    rpc GetCustomStatus(CustomStatusRequest) returns (CustomStatus) {}
+    rpc SetCustomStatus(CustomStatus) returns (CustomStatus) {}
 }
