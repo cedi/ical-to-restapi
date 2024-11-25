@@ -3,12 +3,12 @@ package api
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 
 	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/cedi/meeting_epd/pkg/client"
 	pb "github.com/cedi/meeting_epd/pkg/protos"
@@ -37,10 +37,23 @@ func NewGrpcApiServer(zapLog *otelzap.Logger, client *client.ICalClient) *GrpcAp
 	var err error
 	e.lis, err = net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("gRPC PI: failed to listen: %v", err)
+		zapLog.Fatal(fmt.Sprintf("gRPC API: failed to listen: %v", err))
 	}
 
 	return e
+}
+
+func NewGrpcApiClient(zapLog *otelzap.Logger, addr string) (*grpc.ClientConn, pb.CalenderServiceClient) {
+
+	// Set up a connection to the server.
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		zapLog.Fatal(fmt.Sprintf("gRPC API: failed to connect: %v", err))
+	}
+
+	c := pb.NewCalenderServiceClient(conn)
+
+	return conn, c
 }
 
 func (e *GrpcApi) GetCalendar(ctx context.Context, _ *pb.CalendarRequest) (*pb.CalendarResponse, error) {

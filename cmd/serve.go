@@ -11,7 +11,6 @@ import (
 	"github.com/cedi/meeting_epd/pkg/api"
 	"github.com/cedi/meeting_epd/pkg/client"
 	"github.com/fsnotify/fsnotify"
-	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
@@ -24,34 +23,6 @@ var (
 	savedRestPort          int
 	defaultCalendarRefresh time.Duration = 30 * time.Minute
 )
-
-func initTelemetry() (func(), *zap.Logger, *otelzap.Logger) {
-	var err error
-
-	// Initialize Logging
-	var zapLog *zap.Logger
-	if viper.GetBool("server.debug") {
-		zapLog, err = zap.NewDevelopment()
-		gin.SetMode(gin.DebugMode)
-	} else {
-		zapLog, err = zap.NewProduction()
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	if err != nil {
-		panic(fmt.Errorf("failed to initialize logger: %w", err))
-	}
-
-	otelZap := otelzap.New(zapLog,
-		otelzap.WithCaller(true),
-		otelzap.WithErrorStatusLevel(zap.ErrorLevel),
-		otelzap.WithStackTrace(false),
-	)
-
-	undo := otelzap.ReplaceGlobals(otelZap)
-
-	return undo, zapLog, otelZap
-}
 
 func initCalendarRefresh(zapLog *otelzap.Logger, iCalClient *client.ICalClient) chan struct{} {
 	refreshConfig := viper.GetString("server.refresh")
