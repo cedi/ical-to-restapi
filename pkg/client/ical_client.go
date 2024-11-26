@@ -29,6 +29,12 @@ type ICalClient struct {
 	CustomStatus pb.CustomStatus
 }
 
+type Calendar struct {
+	Name string `mapstructure:"name"`
+	From string `mapstructure:"from"`
+	Ical string `mapstructure:"ical"`
+}
+
 var tzMapping = map[string]string{
 	"Romance Standard Time":        "Europe/Brussels",
 	"Pacific Standard Time":        "US/Pacific",
@@ -57,6 +63,12 @@ func init() {
 	})
 }
 
+func parseCalendars() []Calendar {
+	calendars := []Calendar{}
+	viper.UnmarshalKey("calendars", &calendars)
+	return calendars
+}
+
 func NewICalClient(zapLog *otelzap.Logger) *ICalClient {
 	return &ICalClient{
 		zapLog:          zapLog,
@@ -73,15 +85,17 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 		Entries:     make([]*pb.CalendarEntry, 0),
 	}
 
-	calendars := viper.GetStringMap("calendars")
+	calendars := parseCalendars()
 	rules := parseRules()
 
 	var wg sync.WaitGroup
 	var eventsMux sync.Mutex
 
-	for key := range calendars {
-		from := viper.GetString(fmt.Sprintf("calendars.%s.from", key))
-		url := viper.GetString(fmt.Sprintf("calendars.%s.ical", key))
+	for _, cal := range calendars {
+		name := cal.Name
+		from := cal.From
+		url := cal.Ical
+
 		wg.Add(1)
 
 		go func() {
@@ -97,7 +111,7 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 			response.Entries = append(response.Entries, events...)
 			eventsMux.Unlock()
 
-			e.zapLog.Ctx(ctx).Sugar().Infof("Refreshed calendar %s in %dms", key, stop.Sub(start).Milliseconds())
+			e.zapLog.Ctx(ctx).Sugar().Infof("Refreshed calendar %s in %dms", name, stop.Sub(start).Milliseconds())
 
 			wg.Done()
 		}()

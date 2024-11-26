@@ -90,7 +90,7 @@ var serveCmd = &cobra.Command{
 	Example: "meetingepd version",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.SetDefault("server.httpPort", 8080)
+		viper.SetDefault("server.httpPort", 8099)
 		viper.SetDefault("server.grpcPort", 50051)
 		viper.SetDefault("server.host", "")
 		viper.SetDefault("server.debug", false)
