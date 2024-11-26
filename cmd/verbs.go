@@ -31,15 +31,20 @@ var clearCmd = &cobra.Command{
 	},
 }
 
-func addConnFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&server, "server", "s", "", "Port of the gRPC API of the Server")
+func addDefaultConnectionFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVarP(&server, "server", "s", "", "Port of the gRPC API of the Server")
 	cmd.MarkFlagRequired("server")
 
-	cmd.Flags().IntVar(&port, "port", 50051, "Port of the gRPC API of the Server")
-	viper.BindPFlag("server.grpcPort", cmd.Flags().Lookup("port"))
+	cmd.PersistentFlags().IntVar(&port, "port", 50051, "Port of the gRPC API of the Server")
+	viper.BindPFlag("server.grpcPort", cmd.PersistentFlags().Lookup("port"))
 }
 
 func init() {
+
+	addDefaultConnectionFlags(clearCmd)
+	addDefaultConnectionFlags(getCmd)
+	addDefaultConnectionFlags(setCmd)
+
 	rootCmd.AddCommand(clearCmd)
 	rootCmd.AddCommand(getCmd)
 	rootCmd.AddCommand(setCmd)

@@ -53,6 +53,11 @@ func initTelemetry() (func(), *zap.Logger, *otelzap.Logger) {
 	return undo, zapLog, otelZap
 }
 
+func init() {
+	rootCmd.PersistentFlags().BoolP("debug", "d", false, "enable debug logging")
+	viper.BindPFlag("server.debug", rootCmd.PersistentFlags().Lookup("debug"))
+}
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "meetingepd",

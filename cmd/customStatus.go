@@ -137,10 +137,6 @@ func init() {
 	setCustomStatusCmd.Flags().StringVarP(&icon, "icon", "i", "warning_icon", "Icon to use in custom status")
 	setCustomStatusCmd.Flags().Int32Var(&iconSize, "icon_size", 196, "Icon size to display in the custom status")
 
-	addConnFlags(setCustomStatusCmd)
-	addConnFlags(getCustomStatusCmd)
-	addConnFlags(clearCustomStatusCmd)
-
 	setCmd.AddCommand(setCustomStatusCmd)
 	getCmd.AddCommand(getCustomStatusCmd)
 	clearCmd.AddCommand(clearCustomStatusCmd)

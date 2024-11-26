@@ -90,9 +90,6 @@ var getCalendarCmd = &cobra.Command{
 }
 
 func init() {
-	addConnFlags(clearCalendarCmd)
-	addConnFlags(getCalendarCmd)
-
 	clearCmd.AddCommand(clearCalendarCmd)
 	getCmd.AddCommand(getCalendarCmd)
 }
