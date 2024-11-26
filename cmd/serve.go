@@ -151,7 +151,7 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
-	serveCmd.Flags().StringVarP(&configFileName, "config", "c", "options.json", "Name of the config file")
+	serveCmd.Flags().StringVarP(&configFileName, "config", "c", "options", "Name of the config file")
 
 	rootCmd.AddCommand(serveCmd)
 }
