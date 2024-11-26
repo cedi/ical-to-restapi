@@ -31,9 +31,7 @@ var clearCalendarCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		_, err := client.RefreshCalendar(ctx, &pb.CalendarRequest{
-			Timestamp: time.Now().Unix(),
-		})
+		_, err := client.RefreshCalendar(ctx, &pb.CalendarRequest{CalendarName: "all"})
 		if err != nil {
 			zapLog.Fatal(fmt.Sprintf("Failed to talk to gRPC API (%s) %v", addr, err))
 		}
@@ -43,14 +41,19 @@ var clearCalendarCmd = &cobra.Command{
 }
 
 var getCalendarCmd = &cobra.Command{
-	Use:     "calendar",
+	Use:     "calendar [calendar_name]",
 	Example: "meetingepd get calendar",
-	Args:    cobra.ExactArgs(0),
+	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		viper.SetDefault("server.debug", true)
 		undo, zapLog, otelZap := initTelemetry()
 		defer zapLog.Sync()
 		defer undo()
+
+		calendarName := "all"
+		if len(args) == 1 {
+			calendarName = args[0]
+		}
 
 		addr := fmt.Sprintf("%s:%d", server, port)
 
@@ -61,7 +64,7 @@ var getCalendarCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
-		calendar, err := client.GetCalendar(ctx, &pb.CalendarRequest{Timestamp: time.Now().Unix()})
+		calendar, err := client.GetCalendar(ctx, &pb.CalendarRequest{CalendarName: calendarName})
 		if err != nil {
 			zapLog.Fatal(fmt.Sprintf("Failed to talk to gRPC API (%s) %v", addr, err))
 		}

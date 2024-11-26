@@ -22,6 +22,7 @@ var (
 	savedGrpcPort          int
 	savedRestPort          int
 	defaultCalendarRefresh time.Duration = 30 * time.Minute
+	configFileName         string
 )
 
 func initCalendarRefresh(zapLog *otelzap.Logger, iCalClient *client.ICalClient) chan struct{} {
@@ -97,10 +98,10 @@ var serveCmd = &cobra.Command{
 		viper.SetDefault("server.refresh", "5m")
 		viper.SetDefault("rules", []client.Rule{{Name: "Catch All", Key: "*", Contains: []string{"*"}, Skip: false}})
 
-		viper.SetConfigName("options")                          // name of config file (without extension)
-		viper.AddConfigPath("$HOME/.config/conference-display") // call multiple times to add many search paths
-		viper.AddConfigPath("/data")                            // optionally look for config in the working directory
-		viper.AddConfigPath(".")                                // optionally look for config in the working directory
+		viper.SetConfigName(configFileName)
+		viper.AddConfigPath(".")
+		viper.AddConfigPath("$HOME/.config/conference-display")
+		viper.AddConfigPath("/data")
 
 		viper.SetEnvPrefix("DISPLAY")
 		viper.AutomaticEnv()
@@ -150,5 +151,7 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
+	serveCmd.Flags().StringVarP(&configFileName, "config", "c", "options.json", "Name of the config file")
+
 	rootCmd.AddCommand(serveCmd)
 }

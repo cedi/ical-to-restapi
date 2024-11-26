@@ -18,23 +18,34 @@ message CalendarEntry {
     BusyState busy = 5;
     bool important = 6;
     string message = 7;
+    string calendar_name = 8;
 }
 
 message CalendarResponse {
     int64 last_updated = 1;
     repeated CalendarEntry entries = 2;
+    string calendar_name = 3;
 }
 
 message CalendarRequest {
-    int64 timestamp = 1;
+    string calendar_name = 1;
 }
 
-message CustomStatusRequest {
-    int64 timestamp = 1;
+message GetCustomStatusRequest {
+    string calendar_name = 1;
+}
+
+message SetCustomStatusRequest {
+    string calendar_name = 1;
+    CustomStatus status = 2;
+}
+
+message ClearCustomStatusRequest {
+    string calendar_name = 1;
 }
 
 message RefreshCalendarResponse {
-    int64 timestamp = 1;
+    string calendar_name = 2;
 }
 
 message CustomStatus {
@@ -47,6 +58,7 @@ message CustomStatus {
 service CalenderService {
     rpc GetCalendar(CalendarRequest) returns (CalendarResponse) {}
     rpc RefreshCalendar(CalendarRequest) returns (RefreshCalendarResponse) {}
-    rpc GetCustomStatus(CustomStatusRequest) returns (CustomStatus) {}
-    rpc SetCustomStatus(CustomStatus) returns (CustomStatus) {}
+    rpc GetCustomStatus(GetCustomStatusRequest) returns (CustomStatus) {}
+    rpc SetCustomStatus(SetCustomStatusRequest) returns (CustomStatus) {}
+    rpc ClearCustomStatus(ClearCustomStatusRequest) returns (CustomStatus) {}
 }

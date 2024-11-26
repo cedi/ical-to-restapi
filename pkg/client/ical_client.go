@@ -26,7 +26,7 @@ type ICalClient struct {
 	zapLog          *otelzap.Logger
 
 	statusMux    sync.RWMutex
-	CustomStatus pb.CustomStatus
+	CustomStatus map[string]*pb.CustomStatus // custom status is a map from calendar-name to status
 }
 
 type Calendar struct {
@@ -73,9 +73,8 @@ func NewICalClient(zapLog *otelzap.Logger) *ICalClient {
 	return &ICalClient{
 		zapLog:          zapLog,
 		cacheExpiration: time.Now(),
-		cache: &pb.CalendarResponse{
-			LastUpdated: time.Now().Unix(),
-		},
+		cache:           &pb.CalendarResponse{LastUpdated: time.Now().Unix()},
+		CustomStatus:    make(map[string]*pb.CustomStatus),
 	}
 }
 
@@ -100,7 +99,7 @@ func (e *ICalClient) FetchEvents(ctx context.Context) {
 
 		go func() {
 			start := time.Now()
-			events, err := e.loadEvents(ctx, from, url, rules)
+			events, err := e.loadEvents(ctx, name, from, url, rules)
 			stop := time.Now()
 			if err != nil {
 				e.zapLog.Ctx(ctx).Sugar().Errorw("Unable to load events", err.AsZapLogKV())
@@ -134,29 +133,25 @@ func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
 	return e.cache
 }
 
-func (e *ICalClient) GetCustomStatus(ctx context.Context) *pb.CustomStatus {
+func (e *ICalClient) GetCustomStatus(ctx context.Context, req *pb.GetCustomStatusRequest) *pb.CustomStatus {
 	e.statusMux.RLock()
 	defer e.statusMux.RUnlock()
 
-	return &pb.CustomStatus{
-		Icon:        e.CustomStatus.Icon,
-		IconSize:    e.CustomStatus.IconSize,
-		Title:       e.CustomStatus.Title,
-		Description: e.CustomStatus.Description,
+	if val, ok := e.CustomStatus[req.CalendarName]; ok {
+		return val
 	}
+
+	return &pb.CustomStatus{}
 }
 
-func (e *ICalClient) SetCustomStatus(ctx context.Context, status *pb.CustomStatus) {
+func (e *ICalClient) SetCustomStatus(ctx context.Context, req *pb.SetCustomStatusRequest) {
 	e.statusMux.Lock()
 	defer e.statusMux.Unlock()
 
-	e.CustomStatus.Icon = status.Icon
-	e.CustomStatus.IconSize = status.IconSize
-	e.CustomStatus.Title = status.Title
-	e.CustomStatus.Description = status.Description
+	e.CustomStatus[req.CalendarName] = req.Status
 }
 
-func (e *ICalClient) loadEvents(ctx context.Context, from string, url string, rules []Rule) ([]*pb.CalendarEntry, *errors.ResolvingError) {
+func (e *ICalClient) loadEvents(ctx context.Context, calName string, from string, url string, rules []Rule) ([]*pb.CalendarEntry, *errors.ResolvingError) {
 	ical, err := e.getIcal(ctx, from, url)
 	if ical == nil || err != nil {
 		return nil, errors.Wrap(err, fmt.Errorf("failed to load iCal calendar file"), "")
@@ -185,7 +180,7 @@ func (e *ICalClient) loadEvents(ctx context.Context, from string, url string, ru
 
 	events := make([]*pb.CalendarEntry, 0)
 	for _, evnt := range cal.Events {
-		event := NewCalendarEntryFromGocalEvent(evnt)
+		event := NewCalendarEntryFromGocalEvent(calName, evnt)
 		if event == nil {
 			continue
 		}
@@ -212,7 +207,7 @@ func (e *ICalClient) loadEvents(ctx context.Context, from string, url string, ru
 	return events, nil
 }
 
-func NewCalendarEntryFromGocalEvent(e gocal.Event) *pb.CalendarEntry {
+func NewCalendarEntryFromGocalEvent(calName string, e gocal.Event) *pb.CalendarEntry {
 	if strings.Contains(e.Summary, "Canceled") {
 		return nil
 	}
@@ -240,11 +235,12 @@ func NewCalendarEntryFromGocalEvent(e gocal.Event) *pb.CalendarEntry {
 	end := e.End.In(time.Local)
 
 	return &pb.CalendarEntry{
-		Title:  e.Summary,
-		Start:  start.Unix(),
-		End:    end.Unix(),
-		AllDay: allDay,
-		Busy:   busy,
+		Title:        e.Summary,
+		Start:        start.Unix(),
+		End:          end.Unix(),
+		AllDay:       allDay,
+		Busy:         busy,
+		CalendarName: calName,
 	}
 }
 

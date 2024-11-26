@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	title       string
+	calendar    string
 	description string
 	icon        string
 	iconSize    int32
@@ -37,7 +37,7 @@ var getCustomStatusCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
-		customStatus, err := client.GetCustomStatus(ctx, &pb.CustomStatusRequest{Timestamp: time.Now().Unix()})
+		customStatus, err := client.GetCustomStatus(ctx, &pb.GetCustomStatusRequest{CalendarName: calendar})
 		if err != nil {
 			zapLog.Fatal(fmt.Sprintf("Failed to talk to gRPC API (%s) %v", addr, err))
 		}
@@ -57,7 +57,7 @@ var getCustomStatusCmd = &cobra.Command{
 var setCustomStatusCmd = &cobra.Command{
 	Use:     "status",
 	Example: "meetingepd set status",
-	Args:    cobra.ExactArgs(0),
+	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		viper.SetDefault("server.debug", true)
 		undo, zapLog, otelZap := initTelemetry()
@@ -73,11 +73,14 @@ var setCustomStatusCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
-		customStatus, err := client.SetCustomStatus(ctx, &pb.CustomStatus{
-			Title:       title,
-			Description: description,
-			Icon:        icon,
-			IconSize:    iconSize,
+		customStatus, err := client.SetCustomStatus(ctx, &pb.SetCustomStatusRequest{
+			CalendarName: calendar,
+			Status: &pb.CustomStatus{
+				Title:       args[0],
+				Description: description,
+				Icon:        icon,
+				IconSize:    iconSize,
+			},
 		})
 		if err != nil {
 			zapLog.Fatal(fmt.Sprintf("Failed to talk to gRPC API (%s) %v", addr, err))
@@ -114,12 +117,7 @@ var clearCustomStatusCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
-		_, err := client.SetCustomStatus(ctx, &pb.CustomStatus{
-			Title:       "",
-			Description: "",
-			Icon:        "",
-			IconSize:    0,
-		})
+		_, err := client.ClearCustomStatus(ctx, &pb.ClearCustomStatusRequest{CalendarName: calendar})
 		if err != nil {
 			zapLog.Fatal(fmt.Sprintf("Failed to talk to gRPC API (%s) %v", addr, err))
 		}
@@ -129,13 +127,18 @@ var clearCustomStatusCmd = &cobra.Command{
 }
 
 func init() {
-	setCustomStatusCmd.Flags().StringVarP(&title, "title", "t", "", "Title of your custom status")
-	setCustomStatusCmd.MarkFlagRequired("title")
-
-	setCustomStatusCmd.Flags().StringVarP(&description, "description", "d", "", "Description of your custom status")
-
+	setCustomStatusCmd.Flags().StringVarP(&description, "description", "t", "", "Description of your custom status")
 	setCustomStatusCmd.Flags().StringVarP(&icon, "icon", "i", "warning_icon", "Icon to use in custom status")
 	setCustomStatusCmd.Flags().Int32Var(&iconSize, "icon_size", 196, "Icon size to display in the custom status")
+
+	setCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "c", "", "Name of the calendar to set the custom status for")
+	setCustomStatusCmd.MarkFlagRequired("calendar")
+
+	getCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "c", "", "Name of the calendar to set the custom status for")
+	getCustomStatusCmd.MarkFlagRequired("calendar")
+
+	clearCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "c", "", "Name of the calendar to set the custom status for")
+	clearCustomStatusCmd.MarkFlagRequired("calendar")
 
 	setCmd.AddCommand(setCustomStatusCmd)
 	getCmd.AddCommand(getCustomStatusCmd)

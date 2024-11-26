@@ -56,8 +56,27 @@ func NewGrpcApiClient(zapLog *otelzap.Logger, addr string) (*grpc.ClientConn, pb
 	return conn, c
 }
 
-func (e *GrpcApi) GetCalendar(ctx context.Context, _ *pb.CalendarRequest) (*pb.CalendarResponse, error) {
-	return e.client.GetEvents(ctx), nil
+func (e *GrpcApi) GetCalendar(ctx context.Context, req *pb.CalendarRequest) (*pb.CalendarResponse, error) {
+	events := e.client.GetEvents(ctx)
+
+	if req.CalendarName == "" || req.CalendarName == "*" {
+		req.CalendarName = "all"
+	}
+
+	events.CalendarName = req.CalendarName
+
+	// if a specific calendar is requested, we must filter the entries down to the desired calendars
+	if req.CalendarName != "all" {
+		var responseEvents []*pb.CalendarEntry
+		for _, event := range events.Entries {
+			if event.CalendarName == req.CalendarName {
+				responseEvents = append(responseEvents, event)
+			}
+		}
+		events.Entries = responseEvents
+	}
+
+	return events, nil
 }
 
 func (e *GrpcApi) RefreshCalendar(ctx context.Context, _ *pb.CalendarRequest) (*pb.RefreshCalendarResponse, error) {
@@ -65,13 +84,18 @@ func (e *GrpcApi) RefreshCalendar(ctx context.Context, _ *pb.CalendarRequest) (*
 	return nil, nil
 }
 
-func (e *GrpcApi) GetCustomStatus(ctx context.Context, _ *pb.CustomStatusRequest) (*pb.CustomStatus, error) {
-	return e.client.GetCustomStatus(ctx), nil
+func (e *GrpcApi) GetCustomStatus(ctx context.Context, req *pb.GetCustomStatusRequest) (*pb.CustomStatus, error) {
+	return e.client.GetCustomStatus(ctx, req), nil
 }
 
-func (e *GrpcApi) SetCustomStatus(ctx context.Context, status *pb.CustomStatus) (*pb.CustomStatus, error) {
-	e.client.SetCustomStatus(ctx, status)
-	return e.client.GetCustomStatus(ctx), nil
+func (e *GrpcApi) SetCustomStatus(ctx context.Context, req *pb.SetCustomStatusRequest) (*pb.CustomStatus, error) {
+	e.client.SetCustomStatus(ctx, req)
+	return e.client.GetCustomStatus(ctx, &pb.GetCustomStatusRequest{CalendarName: req.CalendarName}), nil
+}
+
+func (e *GrpcApi) ClearCustomStatus(ctx context.Context, req *pb.ClearCustomStatusRequest) (*pb.CustomStatus, error) {
+	e.client.SetCustomStatus(ctx, &pb.SetCustomStatusRequest{CalendarName: req.CalendarName, Status: &pb.CustomStatus{}})
+	return e.client.GetCustomStatus(ctx, &pb.GetCustomStatusRequest{CalendarName: req.CalendarName}), nil
 }
 
 func (e *GrpcApi) Serve() error {

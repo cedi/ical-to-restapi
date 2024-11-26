@@ -88,28 +88,58 @@ func (e *RestApi) RefreshCalendar(ct *gin.Context) {
 }
 
 func (e *RestApi) GetCalendar(ct *gin.Context) {
+	events := e.client.GetEvents(ct.Request.Context())
+
+	queryParams := ct.Request.URL.Query()
+
+	calendar := queryParams.Get("calendar")
+	if calendar == "" || calendar == "*" {
+		calendar = "all"
+	}
+
+	events.CalendarName = calendar
+
+	// if a specific calendar is requested, we must filter the entries down to the desired calendars
+	if calendar != "all" {
+		var responseEvents []*pb.CalendarEntry
+		for _, event := range events.Entries {
+			if event.CalendarName == calendar {
+				responseEvents = append(responseEvents, event)
+			}
+		}
+		events.Entries = responseEvents
+	}
+
 	switch ct.ContentType() {
 	case "application/protobuf":
-		ct.ProtoBuf(http.StatusOK, e.client.GetEvents(ct.Request.Context()))
+		ct.ProtoBuf(http.StatusOK, events)
 	default:
-		ct.JSON(http.StatusOK, e.client.GetEvents(ct.Request.Context()))
+		ct.JSON(http.StatusOK, events)
 	}
 }
 
 func (e *RestApi) GetCustomStatus(ct *gin.Context) {
+	queryParams := ct.Request.URL.Query()
+	if !queryParams.Has("calendar") || queryParams.Get("calendar") == "" {
+		ct.AbortWithError(http.StatusBadRequest, fmt.Errorf("missing 'calendar' parameter in query parameters: %v", queryParams.Encode()))
+		return
+	}
+
+	calendar := queryParams.Get("calendar")
+	getStatusReq := &pb.GetCustomStatusRequest{CalendarName: calendar}
+
 	switch ct.ContentType() {
 	case "application/protobuf":
-		ct.ProtoBuf(http.StatusOK, e.client.GetCustomStatus(ct.Request.Context()))
+		ct.ProtoBuf(http.StatusOK, e.client.GetCustomStatus(ct.Request.Context(), getStatusReq))
 	default:
-		ct.JSON(http.StatusOK, e.client.GetCustomStatus(ct.Request.Context()))
+		ct.JSON(http.StatusOK, e.client.GetCustomStatus(ct.Request.Context(), getStatusReq))
 	}
 }
 
 func (e *RestApi) SetCustomStatus(ct *gin.Context) {
-
 	var err error
 	var body []byte
-	var customStatus pb.CustomStatus
+	var customStatusReq pb.SetCustomStatusRequest
 
 	switch ct.ContentType() {
 	case "application/protobuf":
@@ -119,7 +149,7 @@ func (e *RestApi) SetCustomStatus(ct *gin.Context) {
 			return
 		}
 
-		if err = proto.Unmarshal(body, &customStatus); err != nil {
+		if err = proto.Unmarshal(body, &customStatusReq); err != nil {
 			ct.ProtoBuf(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
 			return
 		}
@@ -131,17 +161,47 @@ func (e *RestApi) SetCustomStatus(ct *gin.Context) {
 			return
 		}
 
-		if err = json.Unmarshal(body, &customStatus); err != nil {
+		if err = json.Unmarshal(body, &customStatusReq); err != nil {
 			ct.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
 			return
 		}
 	}
 
-	e.client.SetCustomStatus(ct.Request.Context(), &customStatus)
+	e.client.SetCustomStatus(ct.Request.Context(), &customStatusReq)
 }
 
 func (e *RestApi) UnsetCustomStatus(ct *gin.Context) {
-	e.client.SetCustomStatus(ct.Request.Context(), &pb.CustomStatus{})
+	var err error
+	var body []byte
+	var customStatusReq pb.ClearCustomStatusRequest
+
+	switch ct.ContentType() {
+	case "application/protobuf":
+		body, err = io.ReadAll(ct.Request.Body)
+		if err != nil {
+			ct.ProtoBuf(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+			return
+		}
+
+		if err = proto.Unmarshal(body, &customStatusReq); err != nil {
+			ct.ProtoBuf(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
+			return
+		}
+
+	default:
+		body, err = io.ReadAll(ct.Request.Body)
+		if err != nil {
+			ct.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read request body"})
+			return
+		}
+
+		if err = json.Unmarshal(body, &customStatusReq); err != nil {
+			ct.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse request body"})
+			return
+		}
+	}
+
+	e.client.SetCustomStatus(ct.Request.Context(), &pb.SetCustomStatusRequest{CalendarName: customStatusReq.CalendarName, Status: &pb.CustomStatus{}})
 }
 
 func (e *RestApi) Addr() string {

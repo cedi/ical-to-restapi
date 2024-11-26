@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CalenderService_GetCalendar_FullMethodName     = "/meetingroom_display_epd.CalenderService/GetCalendar"
-	CalenderService_RefreshCalendar_FullMethodName = "/meetingroom_display_epd.CalenderService/RefreshCalendar"
-	CalenderService_GetCustomStatus_FullMethodName = "/meetingroom_display_epd.CalenderService/GetCustomStatus"
-	CalenderService_SetCustomStatus_FullMethodName = "/meetingroom_display_epd.CalenderService/SetCustomStatus"
+	CalenderService_GetCalendar_FullMethodName       = "/meetingroom_display_epd.CalenderService/GetCalendar"
+	CalenderService_RefreshCalendar_FullMethodName   = "/meetingroom_display_epd.CalenderService/RefreshCalendar"
+	CalenderService_GetCustomStatus_FullMethodName   = "/meetingroom_display_epd.CalenderService/GetCustomStatus"
+	CalenderService_SetCustomStatus_FullMethodName   = "/meetingroom_display_epd.CalenderService/SetCustomStatus"
+	CalenderService_ClearCustomStatus_FullMethodName = "/meetingroom_display_epd.CalenderService/ClearCustomStatus"
 )
 
 // CalenderServiceClient is the client API for CalenderService service.
@@ -31,8 +32,9 @@ const (
 type CalenderServiceClient interface {
 	GetCalendar(ctx context.Context, in *CalendarRequest, opts ...grpc.CallOption) (*CalendarResponse, error)
 	RefreshCalendar(ctx context.Context, in *CalendarRequest, opts ...grpc.CallOption) (*RefreshCalendarResponse, error)
-	GetCustomStatus(ctx context.Context, in *CustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error)
-	SetCustomStatus(ctx context.Context, in *CustomStatus, opts ...grpc.CallOption) (*CustomStatus, error)
+	GetCustomStatus(ctx context.Context, in *GetCustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error)
+	SetCustomStatus(ctx context.Context, in *SetCustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error)
+	ClearCustomStatus(ctx context.Context, in *ClearCustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error)
 }
 
 type calenderServiceClient struct {
@@ -63,7 +65,7 @@ func (c *calenderServiceClient) RefreshCalendar(ctx context.Context, in *Calenda
 	return out, nil
 }
 
-func (c *calenderServiceClient) GetCustomStatus(ctx context.Context, in *CustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error) {
+func (c *calenderServiceClient) GetCustomStatus(ctx context.Context, in *GetCustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CustomStatus)
 	err := c.cc.Invoke(ctx, CalenderService_GetCustomStatus_FullMethodName, in, out, cOpts...)
@@ -73,10 +75,20 @@ func (c *calenderServiceClient) GetCustomStatus(ctx context.Context, in *CustomS
 	return out, nil
 }
 
-func (c *calenderServiceClient) SetCustomStatus(ctx context.Context, in *CustomStatus, opts ...grpc.CallOption) (*CustomStatus, error) {
+func (c *calenderServiceClient) SetCustomStatus(ctx context.Context, in *SetCustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CustomStatus)
 	err := c.cc.Invoke(ctx, CalenderService_SetCustomStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calenderServiceClient) ClearCustomStatus(ctx context.Context, in *ClearCustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CustomStatus)
+	err := c.cc.Invoke(ctx, CalenderService_ClearCustomStatus_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +101,9 @@ func (c *calenderServiceClient) SetCustomStatus(ctx context.Context, in *CustomS
 type CalenderServiceServer interface {
 	GetCalendar(context.Context, *CalendarRequest) (*CalendarResponse, error)
 	RefreshCalendar(context.Context, *CalendarRequest) (*RefreshCalendarResponse, error)
-	GetCustomStatus(context.Context, *CustomStatusRequest) (*CustomStatus, error)
-	SetCustomStatus(context.Context, *CustomStatus) (*CustomStatus, error)
+	GetCustomStatus(context.Context, *GetCustomStatusRequest) (*CustomStatus, error)
+	SetCustomStatus(context.Context, *SetCustomStatusRequest) (*CustomStatus, error)
+	ClearCustomStatus(context.Context, *ClearCustomStatusRequest) (*CustomStatus, error)
 	mustEmbedUnimplementedCalenderServiceServer()
 }
 
@@ -107,11 +120,14 @@ func (UnimplementedCalenderServiceServer) GetCalendar(context.Context, *Calendar
 func (UnimplementedCalenderServiceServer) RefreshCalendar(context.Context, *CalendarRequest) (*RefreshCalendarResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshCalendar not implemented")
 }
-func (UnimplementedCalenderServiceServer) GetCustomStatus(context.Context, *CustomStatusRequest) (*CustomStatus, error) {
+func (UnimplementedCalenderServiceServer) GetCustomStatus(context.Context, *GetCustomStatusRequest) (*CustomStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCustomStatus not implemented")
 }
-func (UnimplementedCalenderServiceServer) SetCustomStatus(context.Context, *CustomStatus) (*CustomStatus, error) {
+func (UnimplementedCalenderServiceServer) SetCustomStatus(context.Context, *SetCustomStatusRequest) (*CustomStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetCustomStatus not implemented")
+}
+func (UnimplementedCalenderServiceServer) ClearCustomStatus(context.Context, *ClearCustomStatusRequest) (*CustomStatus, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClearCustomStatus not implemented")
 }
 func (UnimplementedCalenderServiceServer) mustEmbedUnimplementedCalenderServiceServer() {}
 func (UnimplementedCalenderServiceServer) testEmbeddedByValue()                         {}
@@ -171,7 +187,7 @@ func _CalenderService_RefreshCalendar_Handler(srv interface{}, ctx context.Conte
 }
 
 func _CalenderService_GetCustomStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CustomStatusRequest)
+	in := new(GetCustomStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -183,13 +199,13 @@ func _CalenderService_GetCustomStatus_Handler(srv interface{}, ctx context.Conte
 		FullMethod: CalenderService_GetCustomStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalenderServiceServer).GetCustomStatus(ctx, req.(*CustomStatusRequest))
+		return srv.(CalenderServiceServer).GetCustomStatus(ctx, req.(*GetCustomStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _CalenderService_SetCustomStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CustomStatus)
+	in := new(SetCustomStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -201,7 +217,25 @@ func _CalenderService_SetCustomStatus_Handler(srv interface{}, ctx context.Conte
 		FullMethod: CalenderService_SetCustomStatus_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CalenderServiceServer).SetCustomStatus(ctx, req.(*CustomStatus))
+		return srv.(CalenderServiceServer).SetCustomStatus(ctx, req.(*SetCustomStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalenderService_ClearCustomStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClearCustomStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalenderServiceServer).ClearCustomStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalenderService_ClearCustomStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalenderServiceServer).ClearCustomStatus(ctx, req.(*ClearCustomStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -228,6 +262,10 @@ var CalenderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetCustomStatus",
 			Handler:    _CalenderService_SetCustomStatus_Handler,
+		},
+		{
+			MethodName: "ClearCustomStatus",
+			Handler:    _CalenderService_ClearCustomStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
