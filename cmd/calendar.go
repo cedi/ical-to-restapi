@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -9,7 +10,10 @@ import (
 	pb "github.com/cedi/meeting_epd/pkg/protos"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v2"
 )
+
+var outFormat string
 
 var clearCalendarCmd = &cobra.Command{
 	Use:     "calendar",
@@ -69,30 +73,56 @@ var getCalendarCmd = &cobra.Command{
 			zapLog.Fatal(fmt.Sprintf("Failed to talk to gRPC API (%s) %v", addr, err))
 		}
 
-		fmt.Printf("Got Calendar (last refreshed: %s)\n\n", time.Unix(calendar.LastUpdated, 0).Format(time.RFC822))
-		for idx, item := range calendar.Entries {
-			fmt.Printf("%d) ", idx)
-
-			if item.Important {
-				fmt.Print("!")
+		switch outFormat {
+		case "json":
+			json, err := json.Marshal(calendar)
+			if err != nil {
+				zapLog.Sugar().Error(err)
 			}
+			fmt.Println(string(json))
 
-			fmt.Printf("%s: [%s to %s] - %s", item.Title, time.Unix(item.Start, 0).Format(time.RFC822), time.Unix(item.End, 0).Format(time.RFC822), item.Busy.String())
-
-			if item.AllDay {
-				fmt.Print(" (all day)")
+		case "yaml":
+			yaml, err := yaml.Marshal(calendar)
+			if err != nil {
+				zapLog.Sugar().Error(err)
 			}
+			fmt.Println(string(yaml))
 
-			if len(item.Message) > 0 {
-				fmt.Printf(": %s", item.Message)
-			}
-
-			fmt.Print("\n")
+		default:
+			fmt.Println(formatText(calendar))
 		}
 	},
 }
 
+func formatText(resp *pb.CalendarResponse) string {
+	outStr := fmt.Sprintf("Got Calendar (last refreshed: %s)\n\n", time.Unix(resp.LastUpdated, 0).Format(time.RFC822))
+
+	for idx, item := range resp.Entries {
+		outStr += fmt.Sprintf("%d) ", idx)
+
+		if item.Important {
+			outStr += "!"
+		}
+
+		outStr += fmt.Sprintf("%s: [%s to %s] - %s", item.Title, time.Unix(item.Start, 0).Format(time.RFC822), time.Unix(item.End, 0).Format(time.RFC822), item.Busy.String())
+
+		if item.AllDay {
+			outStr += " (all day)"
+		}
+
+		if len(item.Message) > 0 {
+			outStr += fmt.Sprintf(": %s", item.Message)
+		}
+
+		outStr += "\n"
+	}
+
+	return outStr
+}
+
 func init() {
+	getCalendarCmd.Flags().StringVarP(&outFormat, "out", "o", "text", "Configure your output format (text, json, yaml)")
+
 	clearCmd.AddCommand(clearCalendarCmd)
 	getCmd.AddCommand(getCalendarCmd)
 }
