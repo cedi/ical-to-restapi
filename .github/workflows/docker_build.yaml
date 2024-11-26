@@ -9,6 +9,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+  issues: write
+  id-token: write
+
 jobs:
   build_and_publish_docker_images:
     name: "Build and Publish Docker"
@@ -40,7 +46,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/aarch64,linux/armv7
           push: ${{ GitHub.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
