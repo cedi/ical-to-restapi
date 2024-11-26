@@ -97,8 +97,7 @@ var serveCmd = &cobra.Command{
 		viper.SetDefault("server.refresh", "5m")
 		viper.SetDefault("rules", []client.Rule{{Name: "Catch All", Key: "*", Contains: []string{"*"}, Skip: false}})
 
-		viper.SetConfigName("display")                          // name of config file (without extension)
-		viper.SetConfigType("yaml")                             // REQUIRED if the config file does not have the extension in the name
+		viper.SetConfigName("options.json")                     // name of config file (without extension)
 		viper.AddConfigPath("$HOME/.config/conference-display") // call multiple times to add many search paths
 		viper.AddConfigPath(".")                                // optionally look for config in the working directory
 
