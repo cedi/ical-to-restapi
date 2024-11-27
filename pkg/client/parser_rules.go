@@ -11,18 +11,14 @@ import (
 	pb "github.com/cedi/meeting_epd/pkg/protos"
 )
 
-type RelabelConfig struct {
-	Message   string `mapstructure:"message"`
-	Important bool   `mapstructure:"important"`
-}
-
 type Rule struct {
-	CalendarName string        `mapstructure:"calendar"`
-	Name         string        `mapstructure:"name"`
-	Key          string        `mapstructure:"key"`
-	Contains     []string      `mapstructure:"contains"`
-	Skip         bool          `mapstructure:"skip"`
-	Relabel      RelabelConfig `mapstructure:"relabelConfig"`
+	CalendarName string   `mapstructure:"calendar"`
+	Name         string   `mapstructure:"name"`
+	Key          string   `mapstructure:"key"`
+	Contains     []string `mapstructure:"contains"`
+	Skip         bool     `mapstructure:"skip"`
+	Message      string   `mapstructure:"message"`
+	Important    bool     `mapstructure:"important"`
 }
 
 // Evaluate evaluates a rule against a pb.CalendarEntry and returns (bool, bool)
@@ -76,8 +72,13 @@ func (r *Rule) Evaluate(e *pb.CalendarEntry, zapLog *otelzap.Logger) (bool, bool
 	}
 
 	// perform the relabelings
-	e.Message = r.Relabel.Message
-	e.Important = r.Relabel.Important
+	if e.Message != r.Message {
+		e.Message = r.Message
+	}
+
+	if e.Important != r.Important {
+		e.Important = r.Important
+	}
 
 	zapLog.Sugar().Debugw("Rule Evaluated", "rule_name", r.Name, "calendar_name", r.CalendarName, "title", e.Title, "key", r.Key, "Field", matchFieldValue, "contains", matchFieldContains, "skip", r.Skip, "relabel_important", e.Important, "relabel_message", e.Message)
 
