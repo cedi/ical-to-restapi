@@ -119,6 +119,14 @@ var serveCmd = &cobra.Command{
 		defer zapLog.Sync()
 		defer undo()
 
+		if viper.GetBool("server.debug") {
+			file, err := os.ReadFile(viper.GetViper().ConfigFileUsed())
+			if err != nil {
+				panic(fmt.Errorf("fatal error reading config file: %w", err))
+			}
+			zapLog.Sugar().With("config_file", string(file)).Debug("Config file used")
+		}
+
 		iCalClient := client.NewICalClient(otelZap)
 
 		quitRefreshTicker := initCalendarRefresh(otelZap, iCalClient)
