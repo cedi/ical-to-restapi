@@ -8,6 +8,8 @@ enum BusyState {
     Free = 0;
     Tentative = 1;
     Busy = 2;
+    OutOfOffice=3;
+    WorkingElsewhere=4;
 }
 
 message CalendarEntry {

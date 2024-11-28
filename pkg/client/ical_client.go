@@ -223,6 +223,15 @@ func NewCalendarEntryFromGocalEvent(calName string, e gocal.Event) *pb.CalendarE
 			busy = pb.BusyState_Busy
 		case "TENTATIVE":
 			busy = pb.BusyState_Tentative
+
+		case "FREE":
+			busy = pb.BusyState_Free
+
+		case "OOF":
+			busy = pb.BusyState_OutOfOffice
+
+		case "WORKINGELSEWHERE":
+			busy = pb.BusyState_WorkingElsewhere
 		}
 	}
 
