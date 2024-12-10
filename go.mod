@@ -2,7 +2,7 @@ module github.com/cedi/meeting_epd
 
 go 1.22.7
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
 	github.com/apognu/gocal v0.9.1
