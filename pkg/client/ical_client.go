@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -131,6 +132,55 @@ func (e *ICalClient) GetEvents(ctx context.Context) *pb.CalendarResponse {
 	e.cacheMux.RLock()
 	defer e.cacheMux.RUnlock()
 	return e.cache
+}
+
+func (e *ICalClient) GetCurrentEvent(ctx context.Context, calendar string) *pb.CalendarEntry {
+	if e.cache == nil {
+		e.zapLog.Ctx(ctx).Sugar().Infow("Experiencing cold. Fetching events now!")
+		e.FetchEvents(ctx)
+	}
+
+	e.cacheMux.RLock()
+	defer e.cacheMux.RUnlock()
+
+	var possibleCurrentEvents []*pb.CalendarEntry
+
+	// Find all events happening right now
+	now := time.Now().Unix()
+	for _, entry := range e.cache.Entries {
+		if calendar != "all" && entry.CalendarName != calendar {
+			continue
+		}
+
+		if entry.Start < now && entry.End > now {
+			possibleCurrentEvents = append(possibleCurrentEvents, entry)
+		}
+	}
+
+	// If no events or only one event, return early
+	switch len(possibleCurrentEvents) {
+	case 0:
+		return nil
+	case 1:
+		return possibleCurrentEvents[0]
+	}
+
+	// Find the event that starts or ends closest to now
+	var closest *pb.CalendarEntry
+	closestDelta := int64(math.MaxInt64)
+
+	for _, entry := range possibleCurrentEvents {
+		delta := int64(now) - int64(entry.Start)
+
+		if delta == closestDelta && entry.Important && (closest == nil || !closest.Important) {
+			closest = entry
+		} else if delta < closestDelta {
+			closest = entry
+			closestDelta = delta
+		}
+	}
+
+	return closest
 }
 
 func (e *ICalClient) GetCustomStatus(ctx context.Context, req *pb.GetCustomStatusRequest) *pb.CustomStatus {

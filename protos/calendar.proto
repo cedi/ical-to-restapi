@@ -59,6 +59,7 @@ message CustomStatus {
 
 service CalenderService {
     rpc GetCalendar(CalendarRequest) returns (CalendarResponse) {}
+    rpc GetCurrentEvent(CalendarRequest) returns (CalendarEntry) {}
     rpc RefreshCalendar(CalendarRequest) returns (RefreshCalendarResponse) {}
     rpc GetCustomStatus(GetCustomStatusRequest) returns (CustomStatus) {}
     rpc SetCustomStatus(SetCustomStatusRequest) returns (CustomStatus) {}

@@ -79,6 +79,16 @@ func (e *GrpcApi) GetCalendar(ctx context.Context, req *pb.CalendarRequest) (*pb
 	return events, nil
 }
 
+func (e *GrpcApi) GetCurrentEvent(ctx context.Context, req *pb.CalendarRequest) (*pb.CalendarEntry, error) {
+	if req.CalendarName == "" || req.CalendarName == "*" {
+		req.CalendarName = "all"
+	}
+
+	currentEvent := e.client.GetCurrentEvent(ctx, req.CalendarName)
+
+	return currentEvent, nil
+}
+
 func (e *GrpcApi) RefreshCalendar(ctx context.Context, _ *pb.CalendarRequest) (*pb.RefreshCalendarResponse, error) {
 	e.client.FetchEvents(ctx)
 	return nil, nil

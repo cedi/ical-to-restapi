@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	CalenderService_GetCalendar_FullMethodName       = "/meetingroom_display_epd.CalenderService/GetCalendar"
+	CalenderService_GetCurrentEvent_FullMethodName   = "/meetingroom_display_epd.CalenderService/GetCurrentEvent"
 	CalenderService_RefreshCalendar_FullMethodName   = "/meetingroom_display_epd.CalenderService/RefreshCalendar"
 	CalenderService_GetCustomStatus_FullMethodName   = "/meetingroom_display_epd.CalenderService/GetCustomStatus"
 	CalenderService_SetCustomStatus_FullMethodName   = "/meetingroom_display_epd.CalenderService/SetCustomStatus"
@@ -31,6 +32,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CalenderServiceClient interface {
 	GetCalendar(ctx context.Context, in *CalendarRequest, opts ...grpc.CallOption) (*CalendarResponse, error)
+	GetCurrentEvent(ctx context.Context, in *CalendarRequest, opts ...grpc.CallOption) (*CalendarEntry, error)
 	RefreshCalendar(ctx context.Context, in *CalendarRequest, opts ...grpc.CallOption) (*RefreshCalendarResponse, error)
 	GetCustomStatus(ctx context.Context, in *GetCustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error)
 	SetCustomStatus(ctx context.Context, in *SetCustomStatusRequest, opts ...grpc.CallOption) (*CustomStatus, error)
@@ -49,6 +51,16 @@ func (c *calenderServiceClient) GetCalendar(ctx context.Context, in *CalendarReq
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CalendarResponse)
 	err := c.cc.Invoke(ctx, CalenderService_GetCalendar_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calenderServiceClient) GetCurrentEvent(ctx context.Context, in *CalendarRequest, opts ...grpc.CallOption) (*CalendarEntry, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CalendarEntry)
+	err := c.cc.Invoke(ctx, CalenderService_GetCurrentEvent_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +112,7 @@ func (c *calenderServiceClient) ClearCustomStatus(ctx context.Context, in *Clear
 // for forward compatibility.
 type CalenderServiceServer interface {
 	GetCalendar(context.Context, *CalendarRequest) (*CalendarResponse, error)
+	GetCurrentEvent(context.Context, *CalendarRequest) (*CalendarEntry, error)
 	RefreshCalendar(context.Context, *CalendarRequest) (*RefreshCalendarResponse, error)
 	GetCustomStatus(context.Context, *GetCustomStatusRequest) (*CustomStatus, error)
 	SetCustomStatus(context.Context, *SetCustomStatusRequest) (*CustomStatus, error)
@@ -116,6 +129,9 @@ type UnimplementedCalenderServiceServer struct{}
 
 func (UnimplementedCalenderServiceServer) GetCalendar(context.Context, *CalendarRequest) (*CalendarResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCalendar not implemented")
+}
+func (UnimplementedCalenderServiceServer) GetCurrentEvent(context.Context, *CalendarRequest) (*CalendarEntry, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentEvent not implemented")
 }
 func (UnimplementedCalenderServiceServer) RefreshCalendar(context.Context, *CalendarRequest) (*RefreshCalendarResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshCalendar not implemented")
@@ -164,6 +180,24 @@ func _CalenderService_GetCalendar_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CalenderServiceServer).GetCalendar(ctx, req.(*CalendarRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalenderService_GetCurrentEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CalendarRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalenderServiceServer).GetCurrentEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalenderService_GetCurrentEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalenderServiceServer).GetCurrentEvent(ctx, req.(*CalendarRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -250,6 +284,10 @@ var CalenderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCalendar",
 			Handler:    _CalenderService_GetCalendar_Handler,
+		},
+		{
+			MethodName: "GetCurrentEvent",
+			Handler:    _CalenderService_GetCurrentEvent_Handler,
 		},
 		{
 			MethodName: "RefreshCalendar",

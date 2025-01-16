@@ -65,6 +65,7 @@ func NewRestApiServer(zapLog *otelzap.Logger, client *client.ICalClient) *RestAp
 	p.Use(router)
 
 	router.GET("/calendar", e.GetCalendar)
+	router.GET("/calendar/current", e.GetCurrentEvent)
 	router.PUT("/calendar", e.RefreshCalendar)
 	router.GET("/status", e.GetCustomStatus)
 	router.POST("/status", e.SetCustomStatus)
@@ -118,6 +119,28 @@ func (e *RestApi) GetCalendar(ct *gin.Context) {
 	}
 }
 
+func (e *RestApi) GetCurrentEvent(ct *gin.Context) {
+	queryParams := ct.Request.URL.Query()
+	calendar := queryParams.Get("calendar")
+	if calendar == "" || calendar == "*" {
+		calendar = "all"
+	}
+
+	currentEvent := e.client.GetCurrentEvent(ct.Request.Context(), calendar)
+
+	status := http.StatusOK
+	if currentEvent == nil {
+		status = http.StatusNotFound
+	}
+
+	switch ct.ContentType() {
+	case "application/protobuf":
+		ct.ProtoBuf(status, currentEvent)
+	default:
+		ct.JSON(status, currentEvent)
+	}
+}
+
 func (e *RestApi) GetCustomStatus(ct *gin.Context) {
 	queryParams := ct.Request.URL.Query()
 	if !queryParams.Has("calendar") || queryParams.Get("calendar") == "" {
@@ -127,12 +150,18 @@ func (e *RestApi) GetCustomStatus(ct *gin.Context) {
 
 	calendar := queryParams.Get("calendar")
 	getStatusReq := &pb.GetCustomStatusRequest{CalendarName: calendar}
+	customStatus := e.client.GetCustomStatus(ct.Request.Context(), getStatusReq)
+
+	status := http.StatusOK
+	if len(customStatus.Title) == 0 {
+		status = http.StatusNotFound
+	}
 
 	switch ct.ContentType() {
 	case "application/protobuf":
-		ct.ProtoBuf(http.StatusOK, e.client.GetCustomStatus(ct.Request.Context(), getStatusReq))
+		ct.ProtoBuf(status, customStatus)
 	default:
-		ct.JSON(http.StatusOK, e.client.GetCustomStatus(ct.Request.Context(), getStatusReq))
+		ct.JSON(status, customStatus)
 	}
 }
 
