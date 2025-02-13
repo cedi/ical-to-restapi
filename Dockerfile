@@ -1,5 +1,5 @@
 # Build the urlshortener binary
-FROM golang:1.23
+FROM golang:1.24
 
 WORKDIR /workspace
 
