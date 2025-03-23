@@ -14,11 +14,7 @@ builds:
       - darwin
     goarch:
       - amd64
-      - arm
       - arm64
-    goarm:
-      - "6"
-      - "7"
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -X=main.Version={{.Version}}

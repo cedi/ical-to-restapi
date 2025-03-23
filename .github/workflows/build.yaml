@@ -140,7 +140,7 @@ jobs:
     needs:
       - docker-build
 
-    if: github.event_name == 'release'
+    # if: github.event_name == 'release'
 
     permissions:
       contents: read
