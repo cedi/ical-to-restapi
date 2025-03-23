@@ -1,8 +1,13 @@
-# iCal Server
+# CalendarAPI
 
-This Service can be configured to parse iCal files and expose their content via gRPC or an REST API
+CalendarAPI is a service that parses iCal files and exposes their content via gRPC or a REST API. It uses Viper for configuration, which supports runtime reloads.
 
-It uses viper for configuration and the configuration supports reloads at runtime.
+## Features
+
+- Parse iCal files from URLs or local files
+- Expose calendar events via gRPC or REST API
+- Dynamic configuration reloads
+- Event filtering and relabeling rules
 
 ## Configuration
 
@@ -86,3 +91,51 @@ rules:
     contains:
       - "*"
 ```
+
+## Development
+
+### Prerequisites
+
+- Go 1.24+
+- Docker (for building and running containers)
+
+### Building
+
+To build the project, run:
+
+```sh
+go build -o calendarapi main.go
+```
+
+### Running
+
+To run the project, execute:
+
+```sh
+./calendarapi
+```
+
+### Docker
+
+To build and run the Docker container, use the following commands:
+
+```sh
+docker build -t calendarapi .
+docker run -p 8080:8080 -p 50051:50051 calendarapi
+```
+
+### Testing
+
+To run tests, use:
+
+```sh
+go test ./...
+```
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
