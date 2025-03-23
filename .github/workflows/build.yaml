@@ -1,5 +1,5 @@
 # .github/workflows/release.yml
-name: goreleaser-ci
+name: Go Build & Release
 
 on:
   workflow_dispatch:
