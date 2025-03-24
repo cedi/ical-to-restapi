@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM alpine:latest
 
 LABEL org.opencontainers.image.source="https://github.com/SpechtLabs/CalendarAPI"
 LABEL org.opencontainers.image.description="CalendarAPI is a service that parses iCal files and exposes their content via gRPC or a REST API."
