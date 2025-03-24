@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cedi/meeting_epd/pkg/api"
-	pb "github.com/cedi/meeting_epd/pkg/protos"
+	"github.com/SpechtLabs/CalendarAPI/pkg/api"
+	pb "github.com/SpechtLabs/CalendarAPI/pkg/protos"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"

@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cedi/meeting_epd/pkg/api"
-	"github.com/cedi/meeting_epd/pkg/client"
+	"github.com/SpechtLabs/CalendarAPI/pkg/api"
+	"github.com/SpechtLabs/CalendarAPI/pkg/client"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

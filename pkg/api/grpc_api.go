@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/cedi/meeting_epd/pkg/client"
-	pb "github.com/cedi/meeting_epd/pkg/protos"
+	"github.com/SpechtLabs/CalendarAPI/pkg/client"
+	pb "github.com/SpechtLabs/CalendarAPI/pkg/protos"
 )
 
 type GrpcApi struct {

@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otelzap"
 
-	pb "github.com/cedi/meeting_epd/pkg/protos"
+	pb "github.com/SpechtLabs/CalendarAPI/pkg/protos"
 )
 
 type Rule struct {

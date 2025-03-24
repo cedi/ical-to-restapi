@@ -1,6 +1,6 @@
 package main
 
-import "github.com/cedi/meeting_epd/cmd"
+import "github.com/SpechtLabs/CalendarAPI/cmd"
 
 var (
 	version string

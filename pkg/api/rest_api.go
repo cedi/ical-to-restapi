@@ -18,8 +18,8 @@ import (
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/cedi/meeting_epd/pkg/client"
-	pb "github.com/cedi/meeting_epd/pkg/protos"
+	"github.com/SpechtLabs/CalendarAPI/pkg/client"
+	pb "github.com/SpechtLabs/CalendarAPI/pkg/protos"
 )
 
 type RestApi struct {
