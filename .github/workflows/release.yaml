@@ -1,12 +1,8 @@
-name: Go Build & Release
+name: Go Release
 
 on:
-  workflow_dispatch:
-  pull_request:
   push:
-    branches:
-      - main
-    tags-ignore:
+    tags:
       - "*"
 
 permissions:
