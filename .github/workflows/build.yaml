@@ -1,4 +1,4 @@
-name: Go Build & Release
+name: Go Build & Docker Build
 
 on:
   workflow_dispatch:
@@ -138,6 +138,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - docker-build
+
+    if: github.event_name != 'pull_request'
 
     permissions:
       contents: read
