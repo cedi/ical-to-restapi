@@ -1,13 +1,14 @@
-# CalendarAPI
+# 📆 CalendarAPI
 
 CalendarAPI is a service that parses iCal files and exposes their content via gRPC or a REST API. It uses Viper for configuration, which supports runtime reloads.
 
-## Features
+## ⚙️ Features
 
-- Parse iCal files from URLs or local files
-- Expose calendar events via gRPC or REST API
-- Dynamic configuration reloads
-- Event filtering and relabeling rules
+- ✅ Parse iCal (.ics) files from **URLs or local files**
+- ✅ Exposes events via **REST** and **gRPC** APIs
+- ✅ Built-in **rule engine** for relabeling, filtering, and skipping events
+- ✅ Supports **hot configuration reloads** (with [Viper](https://github.com/spf13/viper))
+- ✅ [HomeAssistant Add-On] to easily host CalendarAPI on your Home Assistant
 
 ## Configuration
 
@@ -139,3 +140,5 @@ Contributions are welcome! Please open an issue or submit a pull request.
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+[HomeAssistant Add-On]: https://github.com/SpechtLabs/homeassistant-addons/tree/main/calendar_api
