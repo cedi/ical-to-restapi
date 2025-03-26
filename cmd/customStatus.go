@@ -8,7 +8,6 @@ import (
 	"github.com/SpechtLabs/CalendarAPI/pkg/api"
 	pb "github.com/SpechtLabs/CalendarAPI/pkg/protos"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
@@ -23,12 +22,11 @@ var getCustomStatusCmd = &cobra.Command{
 	Example: "meetingepd get status",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.SetDefault("server.debug", true)
 		undo, zapLog, otelZap := initTelemetry()
 		defer zapLog.Sync()
 		defer undo()
 
-		addr := fmt.Sprintf("%s:%d", server, port)
+		addr := fmt.Sprintf("%s:%d", hostname, grpcPort)
 
 		conn, client := api.NewGrpcApiClient(otelZap, addr)
 		defer conn.Close()
@@ -59,12 +57,11 @@ var setCustomStatusCmd = &cobra.Command{
 	Example: "meetingepd set status",
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.SetDefault("server.debug", true)
 		undo, zapLog, otelZap := initTelemetry()
 		defer zapLog.Sync()
 		defer undo()
 
-		addr := fmt.Sprintf("%s:%d", server, port)
+		addr := fmt.Sprintf("%s:%d", hostname, grpcPort)
 
 		conn, client := api.NewGrpcApiClient(otelZap, addr)
 		defer conn.Close()
@@ -103,12 +100,11 @@ var clearCustomStatusCmd = &cobra.Command{
 	Example: "meetingepd clear status",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.SetDefault("server.debug", true)
 		undo, zapLog, otelZap := initTelemetry()
 		defer zapLog.Sync()
 		defer undo()
 
-		addr := fmt.Sprintf("%s:%d", server, port)
+		addr := fmt.Sprintf("%s:%d", hostname, grpcPort)
 
 		conn, client := api.NewGrpcApiClient(otelZap, addr)
 		defer conn.Close()
@@ -131,13 +127,13 @@ func init() {
 	setCustomStatusCmd.Flags().StringVarP(&icon, "icon", "i", "warning_icon", "Icon to use in custom status")
 	setCustomStatusCmd.Flags().Int32Var(&iconSize, "icon_size", 196, "Icon size to display in the custom status")
 
-	setCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "c", "", "Name of the calendar to set the custom status for")
+	setCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "q", "", "Name of the calendar to set the custom status for")
 	setCustomStatusCmd.MarkFlagRequired("calendar")
 
-	getCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "c", "", "Name of the calendar to set the custom status for")
+	getCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "q", "", "Name of the calendar to set the custom status for")
 	getCustomStatusCmd.MarkFlagRequired("calendar")
 
-	clearCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "c", "", "Name of the calendar to set the custom status for")
+	clearCustomStatusCmd.Flags().StringVarP(&calendar, "calendar", "q", "", "Name of the calendar to set the custom status for")
 	clearCustomStatusCmd.MarkFlagRequired("calendar")
 
 	setCmd.AddCommand(setCustomStatusCmd)

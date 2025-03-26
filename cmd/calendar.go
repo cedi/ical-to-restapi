@@ -9,7 +9,6 @@ import (
 	"github.com/SpechtLabs/CalendarAPI/pkg/api"
 	pb "github.com/SpechtLabs/CalendarAPI/pkg/protos"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,12 +20,11 @@ var clearCalendarCmd = &cobra.Command{
 	Long:    "Clear the cache of the server and force it to fetch the latest info from the iCal",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.SetDefault("server.debug", true)
 		undo, zapLog, otelZap := initTelemetry()
 		defer zapLog.Sync()
 		defer undo()
 
-		addr := fmt.Sprintf("%s:%d", server, port)
+		addr := fmt.Sprintf("%s:%d", hostname, grpcPort)
 
 		conn, client := api.NewGrpcApiClient(otelZap, addr)
 		defer conn.Close()
@@ -49,7 +47,6 @@ var getCalendarCmd = &cobra.Command{
 	Example: "meetingepd get calendar",
 	Args:    cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.SetDefault("server.debug", true)
 		undo, zapLog, otelZap := initTelemetry()
 		defer zapLog.Sync()
 		defer undo()
@@ -59,7 +56,7 @@ var getCalendarCmd = &cobra.Command{
 			calendarName = args[0]
 		}
 
-		addr := fmt.Sprintf("%s:%d", server, port)
+		addr := fmt.Sprintf("%s:%d", hostname, grpcPort)
 
 		conn, client := api.NewGrpcApiClient(otelZap, addr)
 		defer conn.Close()

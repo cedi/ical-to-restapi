@@ -2,12 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-)
-
-var (
-	server string
-	port   int
 )
 
 var getCmd = &cobra.Command{
@@ -31,20 +25,7 @@ var clearCmd = &cobra.Command{
 	},
 }
 
-func addDefaultConnectionFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&server, "server", "s", "", "Port of the gRPC API of the Server")
-	cmd.MarkFlagRequired("server")
-
-	cmd.PersistentFlags().IntVar(&port, "port", 50051, "Port of the gRPC API of the Server")
-	viper.BindPFlag("server.grpcPort", cmd.PersistentFlags().Lookup("port"))
-}
-
 func init() {
-
-	addDefaultConnectionFlags(clearCmd)
-	addDefaultConnectionFlags(getCmd)
-	addDefaultConnectionFlags(setCmd)
-
 	rootCmd.AddCommand(clearCmd)
 	rootCmd.AddCommand(getCmd)
 	rootCmd.AddCommand(setCmd)

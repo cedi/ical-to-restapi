@@ -130,7 +130,7 @@ func (e *RestApi) GetCurrentEvent(ct *gin.Context) {
 
 	status := http.StatusOK
 	if currentEvent == nil {
-		status = http.StatusNotFound
+		status = http.StatusGone
 	}
 
 	switch ct.ContentType() {
@@ -154,7 +154,7 @@ func (e *RestApi) GetCustomStatus(ct *gin.Context) {
 
 	status := http.StatusOK
 	if len(customStatus.Title) == 0 {
-		status = http.StatusNotFound
+		status = http.StatusGone
 	}
 
 	switch ct.ContentType() {

@@ -17,14 +17,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	savedHostname          string
-	savedGrpcPort          int
-	savedRestPort          int
-	defaultCalendarRefresh time.Duration = 30 * time.Minute
-	configFileName         string
-)
-
 func initCalendarRefresh(zapLog *otelzap.Logger, iCalClient *client.ICalClient) chan struct{} {
 	refreshConfig := viper.GetString("server.refresh")
 	refresh, err := time.ParseDuration(refreshConfig)
@@ -70,16 +62,16 @@ func viperConfigChange(undo func(), zapLog *zap.Logger, otelZap *otelzap.Logger,
 		close(*quitRefreshTicker)
 		*quitRefreshTicker = initCalendarRefresh(otelZap, iCalClient)
 
-		if savedHostname != viper.GetString("server.host") ||
-			savedGrpcPort != viper.GetInt("server.grpcPort") ||
-			savedRestPort != viper.GetInt("server.httpPort") {
+		if hostname != viper.GetString("server.host") ||
+			grpcPort != viper.GetInt("server.grpcPort") ||
+			restPort != viper.GetInt("server.httpPort") {
 			zapLog.Sugar().Errorw("Unable to change host or port at runtime!",
 				"new_host", viper.GetString("server.host"),
-				"old_host", savedHostname,
+				"old_host", hostname,
 				"new_grpcPort", viper.GetInt("server.grpcPort"),
-				"old_grpcPort", savedGrpcPort,
+				"old_grpcPort", grpcPort,
 				"new_restPort", viper.GetInt("server.httpPort"),
-				"old_grpcPort", savedRestPort,
+				"old_grpcPort", restPort,
 			)
 		}
 	})
@@ -91,35 +83,11 @@ var serveCmd = &cobra.Command{
 	Example: "meetingepd version",
 	Args:    cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		viper.SetDefault("server.httpPort", 8099)
-		viper.SetDefault("server.grpcPort", 50051)
-		viper.SetDefault("server.host", "")
-		viper.SetDefault("server.debug", false)
-		viper.SetDefault("server.refresh", "5m")
-		viper.SetDefault("rules", []client.Rule{{Name: "Catch All", Key: "*", Contains: []string{"*"}, Skip: false}})
-
-		viper.SetConfigName(configFileName)
-		viper.AddConfigPath(".")
-		viper.AddConfigPath("$HOME/.config/conference-display")
-		viper.AddConfigPath("/data")
-
-		viper.SetEnvPrefix("DISPLAY")
-		viper.AutomaticEnv()
-
-		err := viper.ReadInConfig() // Find and read the config file
-		if err != nil {             // Handle errors reading the config file
-			panic(fmt.Errorf("fatal error config file: %w", err))
-		}
-
-		savedHostname = viper.GetString("server.host")
-		savedGrpcPort = viper.GetInt("server.grpcPort")
-		savedRestPort = viper.GetInt("server.httpPort")
-
 		undo, zapLog, otelZap := initTelemetry()
 		defer zapLog.Sync()
 		defer undo()
 
-		if viper.GetBool("server.debug") {
+		if debug {
 			file, err := os.ReadFile(viper.GetViper().ConfigFileUsed())
 			if err != nil {
 				panic(fmt.Errorf("fatal error reading config file: %w", err))
@@ -159,7 +127,5 @@ var serveCmd = &cobra.Command{
 }
 
 func init() {
-	serveCmd.Flags().StringVarP(&configFileName, "config", "c", "options", "Name of the config file")
-
 	rootCmd.AddCommand(serveCmd)
 }
